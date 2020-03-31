@@ -3,3 +3,4 @@ obj/
 **/temp
 .fake
 .ionide
+.vs
