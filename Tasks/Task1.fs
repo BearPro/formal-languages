@@ -4,8 +4,11 @@ open System
 open System.IO
 open System.Text.RegularExpressions
 open CommandLine
-//open Grammar
+open FormalLanguages.Character
+open FormalLanguages.Rule
+open FormalLanguages.Syntax
 
+/// Определяет решение для лабораторной работы №1.
 module Task1 =
     type Options =
         { [<Option('g', "grammar", Required = true, HelpText = "Grammar description file")>]
@@ -15,10 +18,8 @@ module Task1 =
           [<Option('p', "path", SetName = "read-file", Required = true, HelpText = "Path to source file to check")>]
           paths: string seq }
 
+    /// Определяет операции, необходимые для разбора описаний формальных грамматик.
     module Parser =
-        open FormalLanguages.Character
-        open FormalLanguages.Rule
-
         let private lowercaseLiterals = [for i in 97..122 -> (string<<char) i]
         let private uppercaseLietrals = [for i in 65..90 -> (string<<char) i]
         let private numberLiterals = [for i in 48..57 -> (string<<char) i]
@@ -49,7 +50,7 @@ module Task1 =
                   // Одиночный терминальный символ
                   for char in lowercaseLiterals -> n "SingleTerm" --> [ t char; ]
                 ] @ [
-                  // Пробельныые символы
+                  // Пробельные символы
                   for char in whitepsaces -> w --> [ t char; ]
                 ] @ [
                   // Одиночный нетерминальный символ
@@ -92,54 +93,12 @@ module Task1 =
                   n "Section"     --> [ n "Axiom" ]
                   n "Section"     --> [ n "Terminals" ]
                   n "Section"     --> [ n "Nonterminals" ]
-                  // Посдеовательность терминальных символов
+                  // Последовательность терминальных символов
                   n "TermSeq"     --> [ n "SingleTerm"; n "SingleTerm"; ]
                   n "TermSeq"     --> [ n "TermSeq"; n "SingleTerm"; ]
                 ] }
 
-        let rec tryGetNode nodeValue tree =
-            match tree with
-            | { Node = value} when value = nodeValue -> Some tree
-            | { Childs = [] } -> None
-            | { Childs = childs } -> childs |> List.tryPick (tryGetNode nodeValue)
-
-        /// Ищет узел в дереве, но не глубже чем на глубине maxDepth.
-        let rec tryGetNodeLim nodeValue maxDepth tree =
-            if maxDepth < 0
-            then None
-            else match tree with
-                 | { Node = value} when value = nodeValue -> Some tree
-                 | { Childs = [] } -> None
-                 | { Childs = childs } -> childs
-                                       |> List.tryPick (tryGetNodeLim nodeValue (maxDepth - 1))
-
-        let getNode nodeValue tree =
-            tryGetNode nodeValue tree
-            |> function
-            | Some value -> value
-            | None -> failwith "No such value in tree"
-
-        /// Возвращает все узлы дерева, в значениях которых находится nodeValue и которые не имеют
-        /// дочерних узлов со значением nodeValue
-        let rec getLeafNodes nodeValue tree =
-            match tree with
-            | { Node = node; Childs = []} when node <> nodeValue -> []
-            | { Node = node; Childs = childs} when node = nodeValue ->
-                let validChilds =
-                    childs
-                    |> List.collect (getLeafNodes nodeValue)
-                match validChilds with
-                | [] -> [ tree ]
-                | some -> validChilds
-            | { Childs = childs } -> childs |> List.collect (getLeafNodes nodeValue)
-
-        let getNodeLim nodeValue maxDepth tree =
-            tryGetNodeLim nodeValue maxDepth tree
-            |> function
-            | Some value -> value
-            | None -> failwith "No such value in tree"
-
-        /// Находит определение аксиомы в указанном синтаксимческом дереве, взвращает её.
+        /// Находит определение аксиомы в указанном синтаксимческом дереве, возвращает её.
         let parseAxiom tree =
             tree
             |> getNode (n "Axiom")
@@ -149,6 +108,7 @@ module Task1 =
             | Terminal x -> Nonterminal x
             | _ -> failwith "Не удалось найти аксиому."
 
+        /// Находит определение терминалов в указанном синтаксическом дереве, возвращает их.
         let rec parseTerminals tree =
             let terminals =
                 tree
@@ -173,6 +133,7 @@ module Task1 =
             | Some last, None -> [last]
             | Some currnet, Some next -> currnet :: parseTerminals next
 
+        /// Находит определение нетерминалов в указанном синтаксическом дереве, возвращает их.
         let rec parseNonterminals tree =
             let nonterminals =
                 tree
@@ -197,6 +158,7 @@ module Task1 =
             | Some last, None -> [last]
             | Some currnet, Some next -> currnet :: parseNonterminals next
 
+        /// Находит определение правил в указанном синтаксическом дереве, возвращает их.
         let rec parseRules tree =
             let parseRuleDef tree =
                 let rec parseRuleRight (tree : Syntax<Character<string, string>>) =
@@ -248,7 +210,7 @@ module Task1 =
             let parsedRules = ruleDefs |> List.map parseRuleDef
             parsedRules
 
-
+        /// Строит грамматику на основе указанного синтаксического дерева.
         let produceGrammar tree =
             let i = parseAxiom tree
             let v = parseTerminals tree |> List.rev
@@ -258,9 +220,6 @@ module Task1 =
               Rules        = p
               Terminals    = v
               Nonterminals = w }
-
-
-    let fixInput (input: string) = input.Split(";") |> Array.reduce (fun acc line -> (acc + ";\n" + line + ";\n"))
 
     /// Возвращает грамматику, определённую в данном файле.
     let grammar = File.ReadAllText
@@ -274,13 +233,13 @@ module Task1 =
         match result with
         | :? Parsed<Options> as parsed ->
             let grammar = grammar parsed.Value.grammar
-            let contents =
+            printfn "GRAMMAR\n%A" grammar
+
+            let words =
                 parsed.Value.paths
                 |> Seq.map File.ReadAllText
                 |> Seq.append parsed.Value.words
-            let words =
-                contents |> Seq.map (Grammar.parseWord grammar)
-            printfn "GRAMMAR\n%A" grammar
+                |> Seq.map (Grammar.parseWord grammar)
 
             for word in words do
                 let tree = Grammar.Type2.LRParser.tree grammar word

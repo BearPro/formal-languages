@@ -3,13 +3,15 @@ namespace FormalLanguages
 module Utils =
 
     /// Возвращает первый индекс, с которого начинается данная подпоследовательность в данной
-    /// последовательсности.
+    /// последовательности.
     let subseqIndex subseq seq =
         let subseq = Array.ofSeq subseq
         seq
         |> Seq.windowed (subseq |> Seq.length)
         |> Seq.tryFindIndex (fun x -> x = subseq)
 
+    /// Возвращает индексы начала всех подпоследовательностей, совпадающих с данной, в данной
+    /// последовательности.
     let subseqIndexes subseq seq =
         let subseq = Array.ofSeq subseq
         seq
