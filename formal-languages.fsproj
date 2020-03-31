@@ -9,6 +9,8 @@
     <Compile Include="Character.fs" />
     <Compile Include="Rule.fs" />
     <Compile Include="Grammar.fs" />
+    <Compile Include="Syntax.fs" />
+    <Compile Include="FormalLanguages.Grammar.Parser.fs" />
     <Compile Include="Tasks/Task1.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
