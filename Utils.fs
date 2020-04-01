@@ -4,25 +4,34 @@ module Utils =
 
     /// Возвращает первый индекс, с которого начинается данная подпоследовательность в данной
     /// последовательности.
-    let subseqIndex subseq seq =
+    let trySubseqIndex subseq seq =
         let subseq = Array.ofSeq subseq
+        let length = Seq.length subseq
         seq
-        |> Seq.windowed (subseq |> Seq.length)
-        |> Seq.tryFindIndex (fun x -> x = subseq)
+        |> Seq.windowed length
+        |> Seq.tryFindIndex ((=) subseq)
+
+    let subseqIndex subseq seq =
+        trySubseqIndex subseq seq
+        |> function
+        | Some x -> x
+        | None -> failwith "Не найдена такая подпоследовательность."
 
     /// Возвращает индексы начала всех подпоследовательностей, совпадающих с данной, в данной
     /// последовательности.
     let subseqIndexes subseq seq =
         let subseq = Array.ofSeq subseq
+        let length = Seq.length subseq
         seq
-        |> Seq.windowed (subseq |> Seq.length)
+        |> Seq.windowed length
         |> Seq.indexed
-        |> Seq.where (fun (i, x) -> x = subseq)
-        |> Seq.map (fun (i, _) -> i)
+        |> Seq.where (fun (_, window) -> window = subseq)
+        |> Seq.map (fun (index, _) -> index)
 
     /// Возвращает истину, если данная последовательность содержит данную подпоследовательность.
     let hasSubseq subseq seq =
         let subseq = Array.ofSeq subseq
+        let length = Seq.length subseq
         seq
-        |> Seq.windowed (subseq |> Seq.length)
+        |> Seq.windowed length
         |> Seq.contains subseq

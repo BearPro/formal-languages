@@ -10,6 +10,8 @@
     <Compile Include="Rule.fs" />
     <Compile Include="Grammar.fs" />
     <Compile Include="Syntax.fs" />
+    <Compile Include="Syntax.NPParser.fs" />
+    <Compile Include="Syntax.LRParser.fs" />
     <Compile Include="FormalLanguages.Grammar.Parser.fs" />
     <Compile Include="Tasks/Task1.fs" />
     <Compile Include="Program.fs" />

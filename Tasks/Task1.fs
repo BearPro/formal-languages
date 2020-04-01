@@ -1,12 +1,8 @@
 namespace FormalLanguages
 
-open System
 open System.IO
-open System.Text.RegularExpressions
 open CommandLine
 open FormalLanguages.Character
-open FormalLanguages.Rule
-open FormalLanguages.Syntax
 
 /// Определяет решение для лабораторной работы №1.
 module Task1 =
@@ -22,11 +18,14 @@ module Task1 =
           [<Option('p', "path", SetName = "read-file", Required = true, HelpText = "Path to source file to check")>]
           paths: string seq }
 
+    /// Возвращает истину, если корень синтаксимческого дерева соответствует аксиоме указанной
+    /// грамматики.
     let checkTree grammar =
         function
         | [{Node=n}] when n = grammar.Axiom -> true
         | _ -> false
 
+    /// Основная функция, демонстрирующая работу программы.
     let checkWords options =
         let grammar = Grammar.Parser.parse options.grammar
         let check = checkTree grammar

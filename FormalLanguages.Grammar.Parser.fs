@@ -9,10 +9,14 @@ open FormalLanguages.Syntax
 
 /// Определения операций, необходимых для разбора описаний формальных грамматик.
 module Parser =
-    let private lowercaseLiterals = [for i in 97..122 -> (string<<char) i]
-    let private uppercaseLietrals = [for i in 65..90 -> (string<<char) i]
-    let private numberLiterals = [for i in 48..57 -> (string<<char) i]
-    let private whitepsaces = [ " "; "\n"; "\t"; "\r"; "\n\r" ]
+    let private lowercaseLiterals =
+        [ for i in 97..122 -> (string<<char) i ]
+    let private uppercaseLietrals =
+        [ for i in 65..90 -> (string<<char) i ]
+    let private numberLiterals =
+        [ for i in 48..57 -> (string<<char) i ]
+    let private whitepsaces =
+        [ " "; "\n"; "\t"; "\r"; "\n\r" ]
 
     /// Грамматика, которая описывает формальный язык описания грамматик.
     let grammar =
@@ -99,12 +103,9 @@ module Parser =
 
     /// Находит определение терминалов в указанном синтаксическом дереве, возвращает их.
     let rec parseTerminals tree =
-        let terminals =
+        let char =
             tree
             |> getNode (n "Terminals")
-
-        let char =
-            terminals
             |> tryGetNodeLim (n "SingleTerm") 1
             |> function
             | None -> None
@@ -115,21 +116,21 @@ module Parser =
             | _ -> failwith "Не удалось найти терминальный символ."
 
         let next =
-            terminals.Childs |> List.tryPick (tryGetNodeLim (n "Terminals") 0)
+            tree
+            |> getNode (n "Terminals")
+            |> fun { Childs = childs } -> childs
+            |> List.tryPick (tryGetNodeLim (n "Terminals") 0)
 
         match char, next with
-        | None, _ -> []
-        | Some last, None -> [last]
+        | None        , _         -> []
+        | Some last   , None      -> [last]
         | Some currnet, Some next -> currnet :: parseTerminals next
 
     /// Находит определение нетерминалов в указанном синтаксическом дереве, возвращает их.
     let rec parseNonterminals tree =
-        let nonterminals =
+        let char =
             tree
             |> getNode (n "Nonterminals")
-
-        let char =
-            nonterminals
             |> tryGetNodeLim (n "Nonterm") 1
             |> function
             | None -> None
@@ -140,46 +141,48 @@ module Parser =
             | _ -> failwith "Не удалось найти нетерминальный символ."
 
         let next =
-            nonterminals.Childs |> List.tryPick (tryGetNodeLim (n "Nonterminals") 0)
+            tree
+            |> getNode (n "Nonterminals")
+            |> fun { Childs = childs } -> childs
+            |> List.tryPick (tryGetNodeLim (n "Nonterminals") 0)
 
         match char, next with
-        | None, _ -> []
-        | Some last, None -> [last]
+        | None        , _         -> []
+        | Some last   , None      -> [last]
         | Some currnet, Some next -> currnet :: parseNonterminals next
 
     /// Находит определение правил в указанном синтаксическом дереве, возвращает их.
     let rec parseRules tree =
         let parseRuleDef tree =
+            let parseTerm tree =
+                match tree.Childs.[0].Node with
+                | Terminal x -> x
+                | _ -> failwith "Не удалось получить значение."
+
+            let parseTermSeq tree =
+                failwith "Разбор последовательности терминальных символов не реализован."
+
             let rec parseRuleRight (tree : Syntax<Character<string, string>>) =
-                let parseNonterm tree =
-                    match tree.Childs.[0].Node with
-                    | Terminal x -> Nonterminal x
-                    | _ -> failwith "Не удалось получить значение."
-                let parseTerm tree =
-                    match tree.Childs.[0].Node with
-                    | Terminal x -> Terminal x
-                    | _ -> failwith "Не удалось получить значение."
-                let parseTermSeq tree =
-                    failwith null
-                let items = tree.Childs |> List.map (fun x -> x.Node)
-                match items with
+                tree.Childs
+                |> List.map (fun x -> x.Node)
+                |> function
                 | [ Nonterminal "RuleRight"; Nonterminal "RuleRight"; ]  ->
                     parseRuleRight tree.Childs.[0] @ parseRuleRight tree.Childs.[1]
                 | [ Nonterminal "RuleRight"; Nonterminal "SingleTerm"; ] ->
-                    parseRuleRight tree.Childs.[0] @ [ parseTerm tree.Childs.[1] ]
+                    parseRuleRight tree.Childs.[0] @ [ tree.Childs.[1] |> parseTerm |> Terminal ]
                 | [ Nonterminal "RuleRight"; Nonterminal "TermSeq"; ]    ->
                     parseRuleRight tree.Childs.[0] @ [ parseTermSeq tree.Childs.[1] ]
                 | [ Nonterminal "RuleRight"; Nonterminal "Nonterm"; ]    ->
-                    parseRuleRight tree.Childs.[0] @ [ parseNonterm tree.Childs.[1] ]
+                    parseRuleRight tree.Childs.[0] @ [ tree.Childs.[1] |> parseTerm |> Nonterminal ]
                 | [ Nonterminal "Nonterm" ]    ->
-                    [ parseNonterm tree.Childs.[0] ]
+                    [ tree.Childs.[0] |> parseTerm |> Nonterminal ]
                 | [ Nonterminal "SingleTerm" ] ->
-                    [ parseTerm tree.Childs.[0] ]
+                    [ tree.Childs.[0] |> parseTerm |> Terminal ]
                 | [ Nonterminal "TermSeq" ]    ->
                     [ parseTermSeq tree.Childs.[0] ]
                 | _ -> failwith "Не удалось разобрать правую часть правила."
 
-            let left = tree
+            let left =  tree
                         |> getNode (n "RuleLeft")
                         |> getNode (n "Nonterm")
                         |> fun x -> x.Childs.Head.Node
@@ -191,13 +194,10 @@ module Parser =
                         |> parseRuleRight
             left --> right
 
-        let rules =
-            tree
-            |> getNode (n "Rules")
-
-        let ruleDefs = rules |> getLeafNodes (n "RuleDef")
-        let parsedRules = ruleDefs |> List.map parseRuleDef
-        parsedRules
+        tree
+        |> getNode (n "Rules")
+        |> getLeafNodes (n "RuleDef")
+        |> List.map parseRuleDef
 
     /// Строит грамматику на основе указанного синтаксического дерева.
     let produceGrammar tree =

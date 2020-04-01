@@ -21,22 +21,10 @@ type Grammar<'a, 'b> =
 module Grammar =
     /// На основе строки возвращает слово, состоящее из терминальных символов указанной
     /// грамматики.
-    let rec parseWord grammar word =
-        let firstTerm word terms : (string * int) =
-            let applicable term =
-                subseqIndex term word
-                |> function
-                | Some 0 -> true
-                | _ -> false
-
-            terms
-            |> Seq.tryFind applicable
-            |> function
-            | Some term -> term, Option.get <| subseqIndex term word
-            | None -> failwith (sprintf
-                                    "Не удалось распознать символ начиная с \n%s"
-                                    (String.Concat word) )
-        if Seq.isEmpty word
-        then []
-        else match firstTerm word grammar.Terminals with
-             | (term, index) -> t term :: parseWord grammar (Seq.skip (index + term.Length) word)
+    let rec parseWord grammar word  =
+        match Seq.length word with
+        | 0 -> []
+        | _ -> grammar.Terminals
+            |> Seq.find (fun term -> (trySubseqIndex term word) = Some 0)
+            |> fun term -> Terminal term
+                        :: parseWord grammar (Seq.skip (Seq.length term) word)
