@@ -211,8 +211,15 @@ module Parser =
           Nonterminals = w }
 
     /// Возвращает грамматику, определённую в данном файле.
-    let parse = File.ReadAllText
-               >> Grammar.parseWord grammar
-               >> Syntax.LRParser.tree grammar
-               >> List.exactlyOne
-               >> produceGrammar
+    let parseFile = File.ReadAllText
+                 >> Grammar.parseWord grammar
+                 >> Syntax.LRParser.tree grammar
+                 >> List.exactlyOne
+                 >> produceGrammar
+
+    let parse (str: string) =
+            str
+            |> (Grammar.parseWord grammar
+            >> Syntax.LRParser.tree grammar
+            >> List.exactlyOne
+            >> produceGrammar)

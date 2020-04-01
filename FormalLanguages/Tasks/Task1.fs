@@ -27,7 +27,7 @@ module Task1 =
 
     /// Основная функция, демонстрирующая работу программы.
     let checkWords options =
-        let grammar = Grammar.Parser.parse options.grammar
+        let grammar = Grammar.Parser.parseFile options.grammar
         let check = checkTree grammar
         let parse = Syntax.LRParser.tree grammar
         if options.displayGrammar then
