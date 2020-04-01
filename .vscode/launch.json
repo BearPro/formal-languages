@@ -10,11 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/bin/Debug/netcoreapp3.1/formal-languages.dll",
-            "args": ["-g", "./temp/grammar2", "-w", "ccd"],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"
         }
-
     ]
 }
