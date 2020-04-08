@@ -3,19 +3,20 @@ namespace FormalLanguages
 open System.IO
 open CommandLine
 open FormalLanguages.Character
+open System.Collections.Generic
 
 /// Определяет решение для лабораторной работы №1.
 module Task1 =
     type Options =
         { [<Option('g', "grammar", Required = true, HelpText = "Grammar description file")>]
           grammar: string
-          [<Option('w', "words", SetName = "read-line", Required = true, HelpText = "Source word to check")>]
+          [<Option('w', "words", Required = false, HelpText = "Source word to check")>]
           words: string seq
           [<Option('t', "tree", Default = false, HelpText = "If set - displays syntax tree of words.")>]
           displayTree: bool
           [<Option("display-grammar", Default = false, HelpText = "If set - displays parsed grammar.")>]
           displayGrammar: bool
-          [<Option('p', "path", SetName = "read-file", Required = true, HelpText = "Path to source file to check")>]
+          [<Option('p', "path", Required = false, HelpText = "Path to source file to check")>]
           paths: string seq }
 
     /// Возвращает истину, если корень синтаксимческого дерева соответствует аксиоме указанной
@@ -25,6 +26,13 @@ module Task1 =
         | [{Node=n}] when n = grammar.Axiom -> true
         | _ -> false
 
+    let tryParseWord grammar word =
+        try
+            Some <| Grammar.parseWord grammar word
+        with
+        | :? KeyNotFoundException ->
+            printfn "Some symbols of word %A not defined in grammar. Skip." word
+            None
     /// Основная функция, демонстрирующая работу программы.
     let checkWords options =
         let grammar = Grammar.Parser.parseFile options.grammar
@@ -37,7 +45,9 @@ module Task1 =
             options.paths
             |> Seq.map File.ReadAllText
             |> Seq.append options.words
-            |> Seq.map (Grammar.parseWord grammar)
+            |> Seq.map (tryParseWord grammar)
+            |> Seq.where Option.isSome
+            |> Seq.map Option.get
 
         if options.displayTree then
             for word in words do
