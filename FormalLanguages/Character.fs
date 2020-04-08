@@ -16,9 +16,11 @@ module Character =
 
     /// Возвращает строковое представление последовательности символов.
     let toString characters =
-        characters
-        |> Seq.map (function
-                        | Terminal x    -> x.ToString ()
-                        | Nonterminal x -> x.ToString ()
-                        | Empty         -> "ε" )
-        |> Seq.reduce (+)
+        match Seq.length characters with
+        | 0 -> ""
+        | _ -> characters
+            |> Seq.map (function
+                            | Terminal x    -> x.ToString ()
+                            | Nonterminal x -> x.ToString ()
+                            | Empty         -> "ε" )
+            |> Seq.reduce (+)
