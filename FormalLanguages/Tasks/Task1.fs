@@ -7,6 +7,7 @@ open System.Collections.Generic
 
 /// Определяет решение для лабораторной работы №1.
 module Task1 =
+    [<Verb("task1")>]
     type Options =
         { [<Option('g', "grammar", Required = true, HelpText = "Grammar description file")>]
           grammar: string
@@ -58,8 +59,5 @@ module Task1 =
             let tree = parse word
             printfn "%A\t%b" (toString word) (check tree)
 
-    let main argv =
-        let result = CommandLine.Parser.Default.ParseArguments<Options>(argv)
-        match result with
-        | :? Parsed<Options> as options -> checkWords options.Value
-        | _ -> ignore()
+    let run options =
+        checkWords options

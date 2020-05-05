@@ -13,10 +13,15 @@
     <Compile Include="Syntax.NPParser.fs" />
     <Compile Include="Syntax.LRParser.fs" />
     <Compile Include="FormalLanguages.Grammar.Parser.fs" />
+    <Compile Include="StateMachine.fs" />
     <Compile Include="Tasks/Task1.fs" />
+    <Compile Include="Tasks/Task2.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CommandLineParser.FSharp" Version="2.7.82" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="CommandLineParser.FSharp" Version="2.8.0" />
   </ItemGroup>
 </Project>
